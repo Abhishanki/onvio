@@ -145,7 +145,7 @@ export function ManagerWarRoom({ projects, teamMembers }: Props) {
                     }}>{p.status?.replace('_', ' ')}</span>
                     {p.is_sales_flagged && <span style={{ fontSize: 10, background: '#fff0f0', color: '#c53030', padding: '2px 8px', borderRadius: 100, fontWeight: 600 }}>🚩 Flagged</span>}
                   </div>
-                  <div style={{ display: 'flex', align: 'center', gap: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <span style={{ fontSize: 11, color: '#8aaa7a' }}>{p.solution_type}</span>
                     {p.om?.full_name && <span style={{ fontSize: 11, color: '#8aaa7a' }}>OM: {p.om.full_name}</span>}
                   </div>
