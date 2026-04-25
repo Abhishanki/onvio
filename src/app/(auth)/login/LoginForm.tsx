@@ -29,8 +29,12 @@ export function LoginForm() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { toast.error(error.message); setLoading(false); return }
-    router.push('/dashboard')
+    // refresh() must be awaited before push() so Next.js re-fetches server
+    // state (including the new session cookie) before the navigation fires.
+    // Without this ordering the middleware sees no session on the /dashboard
+    // request and immediately redirects back to /login, causing a loop.
     router.refresh()
+    router.push('/dashboard')
   }
 
   const handleMagicLink = async (e: React.FormEvent) => {
