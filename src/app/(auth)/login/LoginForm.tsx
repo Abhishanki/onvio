@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { hasPublicSupabaseEnv } from '@/lib/env'
 import { toast } from 'sonner'
 
 type AuthMode = 'password' | 'magic' | 'reset'
@@ -15,7 +16,8 @@ export function LoginForm() {
   const [magicSent, setMagicSent] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const supabaseReady = hasPublicSupabaseEnv()
+  const supabase = supabaseReady ? createClient() : null
 
   useEffect(() => {
     const error = searchParams.get('error')
@@ -23,20 +25,37 @@ export function LoginForm() {
     if (error === 'confirm_failed') toast.error('Link expired. Request a new one.')
   }, [searchParams])
 
+  if (!supabaseReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+        <div className="max-w-md w-full bg-white border border-red-200 rounded-xl p-6 text-center">
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">Missing Supabase configuration</h2>
+          <p className="text-sm text-slate-600">Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Railway environment variables.</p>
+        </div>
+      </div>
+    )
+  }
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+
     try {
-      // Sign in via Supabase client to set cookie in browser
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { toast.error(error.message); setLoading(false); return }
-      
-      // Small delay to ensure cookie is written
-      // Wait for Supabase to finish writing session cookie to browser
-      await new Promise(r => setTimeout(r, 500))
-      
-      // Hard full-page navigation so server reads fresh cookies
-      window.location.href = '/dashboard'
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const payload: { error?: string; redirectTo?: string } = await response.json()
+
+      if (!response.ok || payload.error) {
+        toast.error(payload.error ?? 'Unable to sign in with password.')
+        setLoading(false)
+        return
+      }
+
+      window.location.href = payload.redirectTo ?? '/dashboard'
     } catch {
       toast.error('Something went wrong. Please try again.')
       setLoading(false)
@@ -46,7 +65,7 @@ export function LoginForm() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase!.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
     })
@@ -58,7 +77,7 @@ export function LoginForm() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase!.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     })
     setLoading(false)

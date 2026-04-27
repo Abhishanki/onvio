@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { hasPublicSupabaseEnv } from '@/lib/env'
 import { toast } from 'sonner'
 
 export default function SetupPasswordPage() {
@@ -11,17 +12,29 @@ export default function SetupPasswordPage() {
   const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseReady = hasPublicSupabaseEnv()
+  const supabase = supabaseReady ? createClient() : null
+
+  if (!supabaseReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+        <div className="max-w-md w-full bg-white border border-red-200 rounded-xl p-6 text-center">
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">Missing Supabase configuration</h2>
+          <p className="text-sm text-slate-600">Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Railway environment variables.</p>
+        </div>
+      </div>
+    )
+  }
 
   const handleSetup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (password !== confirm) { toast.error('Passwords do not match'); return }
     if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
     setLoading(true)
-    const { data: { user }, error: pwError } = await supabase.auth.updateUser({ password })
+    const { data: { user }, error: pwError } = await supabase!.auth.updateUser({ password })
     if (pwError) { toast.error(pwError.message); setLoading(false); return }
     if (user && fullName) {
-      await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id)
+      await supabase!.from('profiles').update({ full_name: fullName }).eq('id', user.id)
     }
     toast.success('Account set up successfully!')
     router.push('/dashboard')

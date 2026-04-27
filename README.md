@@ -89,10 +89,28 @@ supabase/
 
 ## Deployment
 
+### Vercel
 1. Push to GitHub
 2. Connect repo to Vercel
 3. Add environment variables in Vercel dashboard
 4. Deploy — crons auto-configure from `vercel.json`
+
+### Railway + Supabase
+1. Create a new Railway service from this repository.
+2. Set the start/build commands (already provided in `nixpacks.toml`).
+3. Add the same environment variables used locally:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_APP_URL` (set this to your Railway public URL)
+   - `RESEND_API_KEY`, `RESEND_FROM_DOMAIN`, and `CRON_SECRET`
+4. In Supabase Auth settings, add these URLs:
+   - Site URL: your Railway public URL
+   - Redirect URL: `https://<your-railway-domain>/auth/callback`
+5. Redeploy and test `/login`, password login, magic link login, and `/auth/callback`.
+6. (Optional) Run a preflight check before go-live:
+   - `npm run ops:check-env`
+   - Health endpoint: `/api/health/auth`
 
 ## Build Plan
 
