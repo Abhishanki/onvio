@@ -7,17 +7,19 @@ export default async function ManagerDashboard() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-  if (profile?.role !== 'manager') redirect('/dashboard')
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
 
-  const { data: projects } = await supabase
+  if (!profile) redirect('/login')
+  if (profile.role !== 'manager') redirect('/dashboard')
+
+  // Safe query without specific FK names
+  const { data: projects, error: projError } = await supabase
     .from('projects')
-    .select(`
-      *,
-      manager:profiles!projects_manager_id_fkey(id, full_name, email, photo_url),
-      lead:profiles!projects_lead_id_fkey(id, full_name, email, photo_url),
-      om:profiles!projects_om_id_fkey(id, full_name, email, photo_url)
-    `)
+    .select('*')
     .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
 
@@ -25,7 +27,6 @@ export default async function ManagerDashboard() {
     .from('profiles')
     .select('*')
     .eq('org_id', profile.org_id)
-    .eq('is_active', true)
 
   return <ManagerWarRoom projects={projects ?? []} teamMembers={teamMembers ?? []} />
 }
