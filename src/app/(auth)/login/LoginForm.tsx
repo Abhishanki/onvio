@@ -26,17 +26,23 @@ export function LoginForm() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+
     try {
-      // Sign in via Supabase client to set cookie in browser
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { toast.error(error.message); setLoading(false); return }
-      
-      // Small delay to ensure cookie is written
-      // Wait for Supabase to finish writing session cookie to browser
-      await new Promise(r => setTimeout(r, 500))
-      
-      // Hard full-page navigation so server reads fresh cookies
-      window.location.href = '/dashboard'
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const payload: { error?: string; redirectTo?: string } = await response.json()
+
+      if (!response.ok || payload.error) {
+        toast.error(payload.error ?? 'Unable to sign in with password.')
+        setLoading(false)
+        return
+      }
+
+      window.location.href = payload.redirectTo ?? '/dashboard'
     } catch {
       toast.error('Something went wrong. Please try again.')
       setLoading(false)
