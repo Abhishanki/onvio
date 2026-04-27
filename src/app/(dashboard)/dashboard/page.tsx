@@ -5,11 +5,18 @@ export default async function DashboardPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
   const routes: Record<string, string> = {
     manager: '/manager',
     lead: '/lead',
     om: '/om'
   }
+
   redirect(routes[profile?.role ?? 'om'] ?? '/om')
 }
