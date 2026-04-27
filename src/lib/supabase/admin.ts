@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import { getEnv } from '@/lib/env'
 
 // Server-side only — never expose to client
 export function createAdminClient() {
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    getEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    getEnv('SUPABASE_SERVICE_ROLE_KEY'),
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 }

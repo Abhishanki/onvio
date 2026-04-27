@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Resend } from 'resend'
+import { createResendClient } from '@/lib/resend'
 import { differenceInDays, format } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function GET(request: Request) {
+  const resend = createResendClient()
+  if (!resend) return NextResponse.json({ error: 'RESEND_API_KEY is not configured' }, { status: 500 })
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
