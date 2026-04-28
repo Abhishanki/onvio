@@ -8,7 +8,7 @@ A purpose-built client onboarding and project management platform for the Unicom
 
 | Tool | Purpose |
 |------|---------|
-| Next.js 14 | Framework + API Routes |
+| Next.js 14 |  Framework + API Routes |
 | Supabase | Database + Auth + Storage |
 | Tailwind CSS + shadcn | UI |
 | Resend | Transactional Email |
